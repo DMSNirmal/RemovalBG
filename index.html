@@ -1,0 +1,665 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>  
+<script type='text/javascript' src='//pl26425472.profitableratecpm.com/a1/67/9a/a1679ae51b349a21115057f1cbed1f65.js'></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Remover</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f4ff;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #ff6f61 0%, #ffb347 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+
+        .upload-box {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            max-width: 600px;
+            margin: -40px auto 40px;
+            padding: 32px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            border: 2px solid #ff6f61;
+        }
+
+        .upload-area {
+            border: 2px dashed #ffb347;
+            border-radius: 12px;
+            padding: 40px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: linear-gradient(145deg, #fff7e6, #ffe6e6);
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #ff6f61;
+            background: #fff1f1;
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        .upload-area label {
+            cursor: pointer;
+            display: block;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #ff6f61;
+            margin-bottom: 16px;
+        }
+
+        .upload-area h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 8px;
+        }
+
+        .upload-area p {
+            font-size: 16px;
+            color: #718096;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            background: #ff6f61;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(255, 111, 97, 0.3);
+        }
+
+        .btn:hover {
+            background: #e65b50;
+        }
+
+        .download-btn {
+            background: #34c759;
+            margin-top: 16px;
+        }
+
+        .download-btn:hover {
+            background: #2ca44e;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px auto;
+            width: 32px;
+            height: 32px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #ff6f61;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        #output {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #output img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #error {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .features {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(145deg, #ffffff, #f0f4ff);
+            border-radius: 16px;
+            margin: 20px 0;
+        }
+
+        .features h2 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 16px;
+        }
+
+        .features p {
+            font-size: 18px;
+            color: #718096;
+            max-width: 800px;
+            margin: 0 auto 20px;
+        }
+
+        .highlight {
+            background: #ffebcc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #ff6f61;
+        }
+
+        .testimonials {
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #ffe6e6, #e6f0ff);
+            text-align: center;
+        }
+
+        .testimonials h2 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 40px;
+        }
+
+        .testimonial-slider {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .testimonial-grid {
+            display: flex;
+            width: 100%;
+            height: 300px; /* Fixed height to ensure proper alignment */
+        }
+
+        .testimonial {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            width: 300px;
+            margin: 0 auto;
+            text-align: left;
+            flex-shrink: 0;
+            border-left: 4px solid #ff6f61;
+            opacity: 0;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%) scale(0.95);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+
+        .testimonial.active {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+            z-index: 1;
+        }
+
+        .testimonial img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin-bottom: 16px;
+            object-fit: cover;
+        }
+
+        .testimonial p {
+            font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 16px;
+        }
+
+        .testimonial h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a202c;
+        }
+
+        .dots {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: #d1d5db;
+            border-radius: 50%;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .dot.active {
+            background: #ff6f61;
+        }
+
+        .footer {
+            background: #1a202c;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .footer p {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .ad-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .header p {
+                font-size: 16px;
+            }
+
+            .upload-box {
+                padding: 24px;
+                margin-top: -20px;
+            }
+
+            .upload-area {
+                padding: 24px;
+            }
+
+            .upload-area h3 {
+                font-size: 20px;
+            }
+
+            .features h2 {
+                font-size: 28px;
+            }
+
+            .testimonials h2 {
+                font-size: 28px;
+            }
+
+            .testimonial {
+                width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script type='text/javascript' src='//pl26429262.profitableratecpm.com/9c/08/51/9c0851a999a15863c0905eea76c54ef8.js'></script>
+    <div class="header">
+        <div class="container">
+            <h1>Remove Backgrounds in Seconds</h1>
+            <p>Upload your image and let our AI instantly remove the background with precision.</p>
+        </div>
+    </div>
+
+    <div class="ad-section">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : 'b55db81bc0309b312a11fc82c3f6a96c',
+                'format' : 'iframe',
+                'height' : 50,
+                'width' : 340,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/b55db81bc0309b312a11fc82c3f6a96c/invoke.js"></script>
+    </div>
+
+    <div class="container">
+        <div class="upload-box">
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="imageInput" accept="image/*">
+                <label for="imageInput">
+                    <div class="upload-icon">📤</div>
+                    <h3>Upload Image</h3>
+                    <p>Drag and drop or click to select (PNG, JPG)</p>
+                    <button class="btn">Select Image</button>
+                </label>
+            </div>
+            <div class="loading" id="loading"></div>
+            <div id="error"></div>
+        </div>
+
+        <div id="output"></div>
+
+        <div class="features">
+            <h2>Remove backgrounds <span class="highlight">100% automatically in 5 seconds with one click</span></h2>
+            <p>Thanks to remove.bg's clever AI, you can slash editing time - and have more fun!</p>
+            <p>No matter if you want to make a background transparent (PNG), add a white background to a photo, extract or isolate the subject, or get the cutout of a photo - you can do all this and more with remove.bg, the AI background remover for professionals.</p>
+        </div>
+
+        <div class="testimonials">
+            <h2>What Our Users Say</h2>
+            <div class="testimonial-slider">
+                <div class="testimonial-grid" id="testimonialGrid">
+                    <div class="testimonial">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=48&h=48&fit=crop" alt="Emily Carter">
+                        <p>"This tool saved me hours of editing! The AI is incredibly accurate."</p>
+                        <h4>Emily Carter</h4>
+                    </div>
+                    <div class="testimonial">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=48&h=48&fit=crop" alt="James Lee">
+                        <p>"I love how easy it is to use. Perfect for my design projects!"</p>
+                        <h4>James Lee</h4>
+                    </div>
+                    <div class="testimonial">
+                        <img src="https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=48&h=48&fit=crop" alt="Sarah Johnson">
+                        <p>"Best background remover I've ever used. Highly recommend!"</p>
+                        <h4>Sarah Johnson</h4>
+                    </div>
+                    <div class="testimonial">
+                        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=48&h=48&fit=crop" alt="Michael Brown">
+                        <p>"A game-changer for my e-commerce photos. So fast and reliable!"</p>
+                        <h4>Michael Brown</h4>
+                    </div>
+                    <div class="testimonial">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=48&h=48&fit=crop" alt="Lisa Davis">
+                        <p>"The precision is amazing. My images look professional now!"</p>
+                        <h4>Lisa Davis</h4>
+                    </div>
+                    <div class="testimonial">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=48&h=48&fit=crop" alt="David Wilson">
+                        <p>"I use this for all my creative projects. Absolutely fantastic!"</p>
+                        <h4>David Wilson</h4>
+                    </div>
+                </div>
+                <div class="dots" id="dots"></div>
+            </div>
+        </div>
+
+        <div class="ad-section">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '10bd4356dd18a75f6a3e57d482bb0c62',
+                    'format' : 'iframe',
+                    'height' : 250,
+                    'width' : 300,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="//www.highperformanceformat.com/10bd4356dd18a75f6a3e57d482bb0c62/invoke.js"></script>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 Background Remover. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+    </script>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const output = document.getElementById('output');
+
+        let imageBlob = null;
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                removeBackground();
+            }
+        });
+
+        imageInput.addEventListener('change', () => {
+            if (imageInput.files.length > 0) {
+                removeBackground();
+            }
+        });
+
+        function removeBackground() {
+            if (imageInput.files.length === 0) {
+                error.style.display = 'block';
+                error.textContent = 'Please select an image';
+                return;
+            }
+
+            error.style.display = 'none';
+            output.innerHTML = '';
+            loading.style.display = 'block';
+
+            const file = imageInput.files[0];
+            const formData = new FormData();
+            formData.append('image_file', file);
+            formData.append('size', 'auto');
+
+            fetch('https://api.remove.bg/v1.0/removebg', {
+                method: 'POST',
+                headers: {
+                    'X-Api-Key': '43Rg54SayXwVkEvvSc1bexU5'
+                },
+                body: formData
+            })
+            .then(response => {
+                loading.style.display = 'none';
+                if (!response.ok) {
+                    throw new Error('Failed to process image. Check API key or network.');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                imageBlob = blob;
+                const url = URL.createObjectURL(blob);
+                output.innerHTML = `
+                    <img src="${url}" alt="Processed Image">
+                    <button class="btn download-btn" onclick="downloadImage()">Download Image</button>
+                `;
+            })
+            .catch(err => {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = `Error: ${err.message}`;
+                console.error('Error:', err);
+            });
+        }
+
+        function downloadImage() {
+            if (!imageBlob) {
+                error.style.display = 'block';
+                error.textContent = 'No image available for download';
+                return;
+            }
+
+            const url = URL.createObjectURL(imageBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'background_removed.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        }
+
+        // Testimonial Slider
+        const testimonialGrid = document.getElementById('testimonialGrid');
+        const testimonials = document.querySelectorAll('.testimonial');
+        const dotsContainer = document.getElementById('dots');
+        let currentIndex = 0;
+
+        // Create dots
+        testimonials.forEach((_, index) => {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            dot.addEventListener('click', () => {
+                currentIndex = index;
+                updateSlider();
+            });
+            dotsContainer.appendChild(dot);
+        });
+
+        const dots = document.querySelectorAll('.dot');
+
+        function updateSlider() {
+            testimonials.forEach((testimonial, index) => {
+                testimonial.classList.remove('active');
+                if (index === currentIndex) {
+                    testimonial.classList.add('active');
+                }
+            });
+
+            dots.forEach((dot, index) => {
+                dot.classList.remove('active');
+                if (index === currentIndex) {
+                    dot.classList.add('active');
+                }
+            });
+        }
+
+        function autoSlide() {
+            currentIndex = (currentIndex + 1) % testimonials.length;
+            updateSlider();
+        }
+
+        // Initialize slider
+        testimonials.forEach((testimonial, index) => {
+            if (index === 0) {
+                testimonial.classList.add('active');
+            }
+        });
+
+        dots[0].classList.add('active');
+        setInterval(autoSlide, 3000);
+    </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'934396fd48d6bccb',t:'MTc0NTMwODg1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>
